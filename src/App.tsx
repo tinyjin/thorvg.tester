@@ -41,6 +41,8 @@ function App() {
     const blob = new Blob([json], {type:"application/json"});
     const fr = new FileReader();
 
+    
+
     fr.addEventListener("load", (e: any) => {
       const bytes = fr.result;
       player.loadBytes(bytes);
@@ -67,8 +69,8 @@ function App() {
         </a>
       </header>
       
-        <canvas id="image-canvas" width={800} height={800} />
-        <Lottie animationData={target} loop={true} width={800} height={800} />
+      <canvas id="thorvg-canvas" width={800} height={800} />
+      {/* <Lottie animationData={target} loop={true} width={800} height={800} /> */}
     </div>
   );
 }

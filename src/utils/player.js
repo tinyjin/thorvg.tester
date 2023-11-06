@@ -3,20 +3,6 @@ const ConsoleLogTypes = { None : '', Inner : 'console-type-inner', Error : 'cons
 //console message
 function consoleLog(message, type = ConsoleLogTypes.None) {
 	console.log(message);
-	return;
-
-	var consoleWindow = document.getElementById("console-area");
-	var line = document.createElement("span");
-	if (type) line.setAttribute('class', type);
-	line.innerHTML = message
-		.replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-	consoleWindow.appendChild(line);
-	//Scrolling to the end makes it significantly slower
-	//consoleWindow.scrollTop = consoleWindow.scrollHeight;
 }
 
 //for playing animations
@@ -30,15 +16,6 @@ function animLoop() {
 		window.requestAnimationFrame(animLoop);
 	}
 }
-
-//main image section
-function showImageCanvas() {
-	var canvas = document.getElementById("image-canvas");
-	// var placeholder = document.getElementById("image-placeholder");
-	canvas.classList.remove("hidden");
-	// placeholder.classList.add("hidden");
-}
-
 
 class Player {
 	filetype = "unknown";		//current file format: (tvg, svg, json)
@@ -64,10 +41,6 @@ class Player {
 			context.fillStyle = "#5a8be466";
 			context.fillRect(this.geomHighlight[0], this.geomHighlight[1], this.geomHighlight[2], this.geomHighlight[3]);
 		}
-	}
-
-	render2() {
-		console.log('hi render2');
 	}
 
 	render() {
@@ -126,19 +99,19 @@ class Player {
 		}
 	}
 
-	loadData(data, filename) {
-		consoleLog("Loading file " + filename, ConsoleLogTypes.Inner);
-		var ext = filename.split('.').pop();
-		if (ext == "json") ext = "lottie";
-		if (this.tvg.load(new Int8Array(data), ext, this.canvas.width, this.canvas.height)) {
-			this.filename = filename;
-			this.render();
-			this.play();
-			refreshZoomValue();
-		} else {
-			alert("Unable to load an image (" + filename + "). Error: " + this.tvg.error());
-		}
-	}
+	// loadData(data, filename) {
+	// 	consoleLog("Loading file " + filename, ConsoleLogTypes.Inner);
+	// 	var ext = filename.split('.').pop();
+	// 	if (ext == "json") ext = "lottie";
+	// 	if (this.tvg.load(new Int8Array(data), ext, this.canvas.width, this.canvas.height)) {
+	// 		this.filename = filename;
+	// 		this.render();
+	// 		this.play();
+	// 		refreshZoomValue();
+	// 	} else {
+	// 		alert("Unable to load an image (" + filename + "). Error: " + this.tvg.error());
+	// 	}
+	// }
 
 	loadBytes(data) {
 		const buffers = new Int8Array(data);
@@ -153,89 +126,89 @@ class Player {
 		// showImageCanvas();
 	}
 
-	loadFile(file) {
-		let read = new FileReader();
-		read.readAsArrayBuffer(file);
-		read.onloadend = _ => {
-			this.loadData(read.result, file.name);
-			this.createTabs();
-			showImageCanvas();
-			enableZoomContainer();
-			enableProgressContainer();
-		}
-	}
+	// loadFile(file) {
+	// 	let read = new FileReader();
+	// 	read.readAsArrayBuffer(file);
+	// 	read.onloadend = _ => {
+	// 		this.loadData(read.result, file.name);
+	// 		this.createTabs();
+	// 		showImageCanvas();
+	// 		enableZoomContainer();
+	// 		enableProgressContainer();
+	// 	}
+	// }
 
-	loadUrl(url) {
-		let request = new XMLHttpRequest();
-		request.open('GET', url, true);
-		request.responseType = 'arraybuffer';
-		request.onloadend = _ => {
-			if (request.status !== 200) {
-				alert("Unable to load an image from url " + url);
-				return;
-			}
-			let name = url.split('/').pop();
-			this.loadData(request.response, name);
-			this.createTabs();
-			showImageCanvas();
-			enableZoomContainer();
-			deletePopup();
-		};
-	}
+	// loadUrl(url) {
+	// 	let request = new XMLHttpRequest();
+	// 	request.open('GET', url, true);
+	// 	request.responseType = 'arraybuffer';
+	// 	request.onloadend = _ => {
+	// 		if (request.status !== 200) {
+	// 			alert("Unable to load an image from url " + url);
+	// 			return;
+	// 		}
+	// 		let name = url.split('/').pop();
+	// 		this.loadData(request.response, name);
+	// 		this.createTabs();
+	// 		showImageCanvas();
+	// 		enableZoomContainer();
+	// 		deletePopup();
+	// 	};
+	// }
 
-	createTabs() {
-		//layers tab
-		var tvgNodes = this.tvg.layers();
-		var sceneGraph = document.getElementById("scene-graph");
-		sceneGraph.textContent = '';
-		var parent = sceneGraph;
-		var parentDepth = 1;
+	// createTabs() {
+	// 	//layers tab
+	// 	var tvgNodes = this.tvg.layers();
+	// 	var sceneGraph = document.getElementById("scene-graph");
+	// 	sceneGraph.textContent = '';
+	// 	var parent = sceneGraph;
+	// 	var parentDepth = 1;
 
-		for (let i = 0; i < tvgNodes.length; i += 5) {
-			let id = tvgNodes[i];
-			let depth = tvgNodes[i + 1];
-			let type = tvgNodes[i + 2];
-			let opacity = tvgNodes[i + 3];
-			let compositeMethod = tvgNodes[i + 4];
+	// 	for (let i = 0; i < tvgNodes.length; i += 5) {
+	// 		let id = tvgNodes[i];
+	// 		let depth = tvgNodes[i + 1];
+	// 		let type = tvgNodes[i + 2];
+	// 		let opacity = tvgNodes[i + 3];
+	// 		let compositeMethod = tvgNodes[i + 4];
 
-			if (depth > parentDepth) {
-				var block = createLayerBlock(depth);
-				parent = parent.appendChild(block);
-				parentDepth = depth;
-			} else if (depth < parentDepth) {
-				while (parent.getAttribute('tvg-depth') > depth) {
-					parent = parent.parentNode;
-				}
-				parentDepth = depth;
-			}
-			parent.appendChild(createSceneGraph(id, depth, type, compositeMethod, opacity));
-		}
+	// 		if (depth > parentDepth) {
+	// 			var block = createLayerBlock(depth);
+	// 			parent = parent.appendChild(block);
+	// 			parentDepth = depth;
+	// 		} else if (depth < parentDepth) {
+	// 			while (parent.getAttribute('tvg-depth') > depth) {
+	// 				parent = parent.parentNode;
+	// 			}
+	// 			parentDepth = depth;
+	// 		}
+	// 		parent.appendChild(createSceneGraph(id, depth, type, compositeMethod, opacity));
+	// 	}
 
-		//file tab
-		var size = Float32Array.from(this.tvg.size());
-		var sizeText = ((size[0] % 1 === 0) && (size[1] % 1 === 0)) ?
-			size[0].toFixed(0) + " x " + size[1].toFixed(0) :
-			size[0].toFixed(2) + " x " + size[1].toFixed(2);
+	// 	//file tab
+	// 	var size = Float32Array.from(this.tvg.size());
+	// 	var sizeText = ((size[0] % 1 === 0) && (size[1] % 1 === 0)) ?
+	// 		size[0].toFixed(0) + " x " + size[1].toFixed(0) :
+	// 		size[0].toFixed(2) + " x " + size[1].toFixed(2);
 
-		var file = document.getElementById("file");
-		file.textContent = '';
-		file.appendChild(createHeader("Details"));
-		file.appendChild(createTitleLine("Filename", this.filename));
-		file.appendChild(createTitleLine("Resolution", sizeText));
-		file.appendChild(createHeader("Export"));
-		var lineExportCompressedTvg = createPropertyLine("Export .tvg file (compression)");
-		lineExportCompressedTvg.addEventListener("click", () => {player.save(true)}, false);
-		file.appendChild(lineExportCompressedTvg);
-		var lineExportNotCompressedTvg = createPropertyLine("Export .tvg file (no compression)");
-		lineExportNotCompressedTvg.addEventListener("click", () => {player.save(false)}, false);
-		file.appendChild(lineExportNotCompressedTvg);
-		var lineExportPng = createPropertyLine("Export .png file");
-		lineExportPng.addEventListener("click", exportCanvasToPng, false);
-		file.appendChild(lineExportPng);
+	// 	var file = document.getElementById("file");
+	// 	file.textContent = '';
+	// 	file.appendChild(createHeader("Details"));
+	// 	file.appendChild(createTitleLine("Filename", this.filename));
+	// 	file.appendChild(createTitleLine("Resolution", sizeText));
+	// 	file.appendChild(createHeader("Export"));
+	// 	var lineExportCompressedTvg = createPropertyLine("Export .tvg file (compression)");
+	// 	lineExportCompressedTvg.addEventListener("click", () => {player.save(true)}, false);
+	// 	file.appendChild(lineExportCompressedTvg);
+	// 	var lineExportNotCompressedTvg = createPropertyLine("Export .tvg file (no compression)");
+	// 	lineExportNotCompressedTvg.addEventListener("click", () => {player.save(false)}, false);
+	// 	file.appendChild(lineExportNotCompressedTvg);
+	// 	var lineExportPng = createPropertyLine("Export .png file");
+	// 	lineExportPng.addEventListener("click", exportCanvasToPng, false);
+	// 	file.appendChild(lineExportPng);
 
-		//switch to file list in default.
-		onShowFilesList();
-	}
+	// 	//switch to file list in default.
+	// 	onShowFilesList();
+	// }
 
 	save(compress) {
 		if (this.tvg.save(compress)) {
@@ -280,8 +253,7 @@ class Player {
 
 	constructor() {
 		this.tvg = new Module.TvgWasm();
-		this.canvas = document.getElementById("image-canvas");
-		console.log(this.canvas.width);
+		this.canvas = document.getElementById("thorvg-canvas");
 		consoleLog("ThorVG module loaded correctly", ConsoleLogTypes.Inner);
 	}
 }
