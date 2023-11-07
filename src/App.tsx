@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import Player from './utils/player';
@@ -42,6 +42,10 @@ function arrayDiff(a: any, b: any) {
 
 function App() {
   const initialized = useRef(false)
+  const [curerntFile, setCurrentFile] = useState('');
+  const [currentCompability, setCurrentCompability] = useState('');
+  let [cnt, setCnt] = useState(0);
+  let [log, setLog] = useState<string[]>([]);
 
   useEffect(() => {
     if (initialized.current) {
@@ -73,13 +77,24 @@ function App() {
 
   const start = async () => {
     for (const targetName of targetList) {
+      setCurrentFile(targetName);
+      setCurrentCompability('Checking...');
+
       const compability = await run(`/images/${targetName}`);
-      
+      setCurrentCompability('' + compability + '%');
       console.info(`${targetName} - Compability: ${compability}%`);
+
+      const isCompability = compability >= 40;
+
+      log.push(`${isCompability ? '✅' : '❗'} ${targetName} - Compability: ${compability}%`);
+      setLog(log.slice());
+
+      cnt += 1;
+      setCnt(cnt);
     }
   }
 
-  const run = async (name: string) => {
+  const run = async (name: string): Promise<number> => {
     return new Promise((resolve, reject) => { // !
       try {
         const thorvgCanvas: any = document.querySelector("#thorvg-canvas");
@@ -171,11 +186,22 @@ function App() {
       
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
+        {
+          cnt >= targetList.length - 1 ? <span>DONE</span>
+          :
+          <p>
+            {curerntFile} - {currentCompability}
+          </p>
+        }
         <div style={{ cursor: 'pointer' }} onClick={start}>START</div>
+        
+        <div style={{ marginTop: 32, fontSize: 13, height: 300, overflowY: 'scroll' }}>
+          {
+            log.map((line, i) => <div style={{ marginBottom: 4 }}>{line}<br/></div>)
+          }
+        </div>
       </header>
+
       
       <div style={{ display: 'flex' }}>
         <canvas id="thorvg-canvas" width={size} height={size} />
