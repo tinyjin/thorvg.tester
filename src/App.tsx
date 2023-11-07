@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import target from "./images/703.json";
 import Player from './utils/player';
 import "@lottiefiles/lottie-player";
+import targetList from './index.json';
 
 declare global {
   interface Window { Module: any; player: any }
@@ -12,6 +12,7 @@ declare global {
 const size = 100;
 
 let player: any;
+let json: any;
 
 const getPixelsFromCanvas = (canvas: any) => {
   var context = canvas.getContext('2d');
@@ -59,61 +60,93 @@ function App() {
         player = new Player();
         window.player = player;
 
-        load();
+        // start();
       };
     };
 
-    window.onload = () => {
-      const player: any = document.querySelector("lottie-player");
-      // or load via a Bodymovin JSON string/object
-      player.load(
-        JSON.stringify(target)
-      );
-    }
-
     // @ts-ignore
-    window.test = () => {
-      const thorvgCanvas: any = document.querySelector("#thorvg-canvas");
-      // @ts-ignore
-      const origin: any = document.querySelector('.lottie-player').shadowRoot.querySelector('svg');
-      const lottieCanvas: any = document.querySelector("#lottie-canvas");
-      var img: any = document.querySelector('.lottie-img');
-
-      // get svg data
-      origin.setAttribute('width', `${size}px`);
-      origin.setAttribute('height', `${size}px`);
-      var xml = new XMLSerializer().serializeToString(origin);
-      
-      // make it base64
-      var svg64 = btoa(xml);
-      var b64Start = 'data:image/svg+xml;base64,';
-      
-      // prepend a "header"
-      var image64 = b64Start + svg64;
-      
-      // set it as the source of the img element
-      img.onload = function() {
-          // draw the image onto the canvas
-          lottieCanvas.getContext('2d').drawImage(img, 0, 0);
-      }
-      img.src = image64;
-
-
-      // Pixel diff
-      const thorvgPixels = getPixelsFromCanvas(thorvgCanvas);
-      const lottiePixels = getPixelsFromCanvas(lottieCanvas);
-
-      const diff = arrayDiff(thorvgPixels, lottiePixels);
-
-      console.log('Compability: ');
-      console.log((100 - Math.ceil(diff / thorvgPixels.length * 100)) + '%');
-      // console.log(thorvgPixels.length);
-      // console.log(lottiePixels);
+    window.test = async () => {
+      const c = await run('/images/2464.json');
+      console.log(c);
     }
   }, []);
 
-  const load = () => {
-    let json = JSON.stringify(target);
+  const start = async () => {
+    for (const targetName of targetList) {
+      const compability = await run(`/images/${targetName}`);
+      
+      console.info(`${targetName} - Compability: ${compability}%`);
+    }
+  }
+
+  const run = async (name: string) => {
+    return new Promise((resolve, reject) => { // !
+      try {
+        const thorvgCanvas: any = document.querySelector("#thorvg-canvas");
+        const lottieCanvas: any = document.querySelector("#lottie-canvas");
+
+        thorvgCanvas.getContext('2d').clearRect(0, 0, size, size);
+        lottieCanvas.getContext('2d').clearRect(0, 0, size, size);
+
+        setTimeout(async () => {
+          await load(name);
+
+          setTimeout(() => {
+            test();
+            setTimeout(() => {
+              const compability = test();
+              resolve(compability);
+            }, 100);
+          }, 100);
+        }, 100);
+      } catch (err) {
+        reject(err);  // ! return err; => reject(err);
+      }
+    })
+  }
+
+  const test = () => {
+    // @ts-ignore
+    const origin: any = document.querySelector('.lottie-player').shadowRoot.querySelector('svg');
+    const img: any = document.querySelector('.lottie-img');
+    
+    const thorvgCanvas: any = document.querySelector("#thorvg-canvas");
+    const lottieCanvas: any = document.querySelector("#lottie-canvas");
+
+    // get svg data
+    origin.setAttribute('width', `${size}px`);
+    origin.setAttribute('height', `${size}px`);
+    var xml = new XMLSerializer().serializeToString(origin);
+    
+    // make it base64
+    var svg64 = btoa(xml);
+    var b64Start = 'data:image/svg+xml;base64,';
+    
+    // prepend a "header"
+    var image64 = b64Start + svg64;
+    
+    // set it as the source of the img element
+    img.onload = function() {
+        // draw the image onto the canvas
+        lottieCanvas.getContext('2d').drawImage(img, 0, 0);
+    }
+    img.src = image64;
+
+
+    // Pixel diff
+    const thorvgPixels = getPixelsFromCanvas(thorvgCanvas);
+    const lottiePixels = getPixelsFromCanvas(lottieCanvas);
+
+    const diff = arrayDiff(thorvgPixels, lottiePixels);
+
+    const compability = 100 - Math.ceil(diff / thorvgPixels.length * 100);
+    return compability
+  }
+
+  const load = async (name: string) => {
+    // thorvg
+    // let json = JSON.stringify(target);
+    json = await (await fetch(name)).text();
     const blob = new Blob([json], {type:"application/json"});
     const fr = new FileReader();
 
@@ -121,10 +154,16 @@ function App() {
       const bytes = fr.result;
       player.loadBytes(bytes);
       player.frame(0);
-      console.log(player.totalFrame);
+      player.update();
+      // console.log(player.totalFrame);
     });
 
     fr.readAsArrayBuffer(blob);
+
+    // lottie-player
+    const lottiePlayer: any = document.querySelector("lottie-player");
+    // or load via a Bodymovin JSON string/object
+    lottiePlayer.load(json);
   }
 
   return (
@@ -135,14 +174,7 @@ function App() {
         <p>
           Edit <code>src/App.tsx</code> and save to reload.
         </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <div style={{ cursor: 'pointer' }} onClick={start}>START</div>
       </header>
       
       <div style={{ display: 'flex' }}>
