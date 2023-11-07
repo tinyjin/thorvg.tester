@@ -89,21 +89,29 @@ function App() {
 
   const start = async () => {
     for (const targetName of targetList) {
+      let logText = '';
+
       setCurrentFile(targetName);
       setCurrentCompability('Checking...');
 
-      try {
-        const compability = await run(`/images/${targetName}`);
-        setCurrentCompability('' + compability + '%');
-        console.info(`${targetName} - Compability: ${compability}%`);
-        const isCompability = compability >= 40;
-  
-        log.push(`${isCompability ? '✅' : '❗'} ${targetName} - Compability: ${compability}%`);
-      } catch (err) {
-        log.push(`⚠️ ${targetName} - OpenCV Error catched`);
-      }
+      const compability = await run(`/images/${targetName}`);
+      const isCompability = compability >= 50;
+
+      logText = `${isCompability ? '✅' : '❗'} ${targetName} - Compability: ${compability}%`;
+
+      setCurrentCompability('' + compability + '%');
+      console.info(logText);
+      log.push(logText);
+      
+      // try {
+      // } catch (err) {
+      //   log.push(`⚠️ ${targetName} - OpenCV Error catched`);
+      // }
 
       setLog(log.slice());
+
+      // save result 
+      await saveResult(logText);
 
       cnt += 1;
       setCnt(cnt);
@@ -134,6 +142,34 @@ function App() {
         reject(err);  // ! return err; => reject(err);
       }
     })
+  }
+
+  const saveResult = async (logText: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const resultBoard = document.querySelector('.result');
+      const resultRow = document.querySelector('.result-row')?.cloneNode(true) as any;
+      resultBoard?.appendChild(resultRow);
+  
+      const resultText = document.createElement('span');
+      resultText.innerText = logText;
+      resultRow?.appendChild(resultText);
+  
+      const thorvgCanvas = document.querySelector('#thorvg-canvas');
+      const lottieCanvas = document.querySelector('#lottie-canvas');
+      
+      const thorvgCloneCanvas = thorvgCanvas?.cloneNode(true) as any;
+      const lottieCloneCanvas = lottieCanvas?.cloneNode(true) as any;
+  
+      thorvgCloneCanvas.getContext('2d').drawImage(thorvgCanvas, 0, 0);
+      lottieCloneCanvas.getContext('2d').drawImage(lottieCanvas, 0, 0);
+  
+      resultRow?.appendChild(thorvgCloneCanvas);
+      resultRow?.appendChild(lottieCloneCanvas);
+
+      setTimeout(() => {
+        resolve();
+      }, 150);
+    });
   }
 
   const test = () => {
@@ -313,6 +349,11 @@ function App() {
     <div style={{ display: 'flex' }}>
       <canvas id="thorvg-output-canvas" width={512} height={512} />
       <canvas id="lottie-output-canvas" width={512} height={512} />
+    </div>
+
+    <div className='result' style={{ padding: 24 }}>
+      <div className='result-row' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+      </div>
     </div>
     </OpenCvProvider>
   );
