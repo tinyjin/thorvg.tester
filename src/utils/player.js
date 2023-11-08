@@ -114,8 +114,7 @@ class Player {
 	// }
 
 	loadBytes(data) {
-		const buffers = new Int8Array(data);
-		if (this.tvg.load(buffers, 'lottie', this.canvas.width, this.canvas.height)) {
+		if (this.tvg.load(new Int8Array(data), 'lottie', this.canvas.width, this.canvas.height)) {
 			this.render();
 			this.play();
 		// // // 	// refreshZoomValue();
@@ -252,7 +251,7 @@ class Player {
 	}
 
 	constructor() {
-		this.tvg = new Module.TvgWasm();
+		this.tvg = new window.Module.TvgWasm();
 		this.canvas = document.getElementById("thorvg-canvas");
 		consoleLog("ThorVG module loaded correctly", ConsoleLogTypes.Inner);
 	}

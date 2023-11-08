@@ -18,6 +18,7 @@ declare global {
 
 // window.cv = cv;
 
+const testingSize = 512;
 const size = 100;
 
 let player: any;
@@ -62,26 +63,36 @@ function App() {
       return;
     }
 
-    initialized.current = true
+    initialized.current = true;
 
     var script = document.createElement('script');
     script.type = 'text/javascript';
     script.src = '/wasm/thorvg-wasm.js';
     document.head.appendChild(script);
-  
-    script.onload = _ => {
+
+    script.onload = () => {
       window.Module.onRuntimeInitialized = () => {
+        if (player != null) {
+          return;
+        }
+
         player = new Player();
         window.player = player;
-
-        // start();
       };
     };
   }, []);
 
   const start = async () => {
-    for (const targetName of targetList) {
-      if (!targetName.endsWith('.json')) {
+    // sort by name
+    const targets = targetList.sort((a, b) => {
+      if (a < b) {
+        return -1;
+      }
+      return 1;
+    });
+
+    for (const targetName of targets) {
+      if (!targetName.endsWith('.json') || targetName === 'index.json') {
         continue;
       }
 
@@ -120,8 +131,8 @@ function App() {
         const thorvgCanvas: any = document.querySelector("#thorvg-canvas");
         const lottieCanvas: any = document.querySelector("#lottie-canvas");
 
-        thorvgCanvas.getContext('2d').clearRect(0, 0, size, size);
-        lottieCanvas.getContext('2d').clearRect(0, 0, size, size);
+        thorvgCanvas.getContext('2d').clearRect(0, 0, testingSize, testingSize);
+        lottieCanvas.getContext('2d').clearRect(0, 0, testingSize, testingSize);
 
         setTimeout(async () => {
           const isLoaded = await load(name);
@@ -160,9 +171,18 @@ function App() {
       const thorvgCloneCanvas = thorvgCanvas?.cloneNode(true) as any;
       const lottieCloneCanvas = lottieCanvas?.cloneNode(true) as any;
       const diffCloneImg = diffImg?.cloneNode(true) as any;
+
+      thorvgCloneCanvas.width = size;
+      thorvgCloneCanvas.height = size;
+
+      lottieCloneCanvas.width = size;
+      lottieCloneCanvas.height = size;
+
+      diffCloneImg.width = size;
+      diffCloneImg.height = size;
   
-      thorvgCloneCanvas.getContext('2d').drawImage(thorvgCanvas, 0, 0);
-      lottieCloneCanvas.getContext('2d').drawImage(lottieCanvas, 0, 0);
+      thorvgCloneCanvas.getContext('2d').drawImage(thorvgCanvas, 0, 0, size, size);
+      lottieCloneCanvas.getContext('2d').drawImage(lottieCanvas, 0, 0, size, size);
   
       resultRow?.appendChild(thorvgCloneCanvas);
       resultRow?.appendChild(lottieCloneCanvas);
@@ -183,8 +203,8 @@ function App() {
     const lottieCanvas: any = document.querySelector("#lottie-canvas");
 
     // get svg data
-    origin.setAttribute('width', `${size}px`);
-    origin.setAttribute('height', `${size}px`);
+    origin.setAttribute('width', `${testingSize}px`);
+    origin.setAttribute('height', `${testingSize}px`);
     var xml = new XMLSerializer().serializeToString(origin);
     
     // make it base64
@@ -231,53 +251,62 @@ function App() {
 
     return new Promise((resolve, reject) => {
       resemble.compare(thorvgURL, lottieURL, {}, (err: any, data: any) => {
-        console.log('resembleJS');
-        console.log(data);
-
         const { misMatchPercentage, getImageDataUrl } = data;
         const diffImg = document.querySelector('#diff-img') as any;
         diffImg.src = getImageDataUrl();
-
+        
+        // console.log(data);
         resolve(100 - misMatchPercentage);
       });
     });
   }
 
+
   const load = async (name: string) => {
-    // thorvg
-    json = await (await fetch(name)).text();
+    return new Promise<boolean>(async (resolve, reject) => {
+      // thorvg
+      json = await (await fetch(name)).text();
 
-    // check JSON
-    try {
-      JSON.parse(json);
-    } catch (err) {
-      return false;
-    }
+      try {
+        // lottie-player
+        const lottiePlayer: any = document.querySelector("lottie-player");
+        // or load via a Bodymovin JSON string/object
+        lottiePlayer.load(json);
+      } catch (err) {
+        console.log('Mark as an error : maybe lottie issue');
+        resolve(false);
+      }
+  
+      // check JSON
+      try {
+        JSON.parse(json);
+      } catch (err) {
+        resolve(false);
+      }
+  
+      const blob = new Blob([json], {type:"application/json"});
+      const fr = new FileReader();
 
-    const blob = new Blob([json], {type:"application/json"});
-    const fr = new FileReader();
+      fr.onloadend = () => {
+        const bytes = fr.result as any;
+        console.log(bytes);
+        
 
-    fr.addEventListener("load", (e: any) => {
-      const bytes = fr.result;
-      player.loadBytes(bytes);
-      player.frame(0);
-      player.update();
-      // console.log(player.totalFrame);
+        try {
+          player.loadBytes(bytes);
+          player.frame(0);
+          player.update();
+          // console.log(player.totalFrame);
+        } catch (err) {
+          console.log(err);
+          resolve(false);
+        }
+
+        resolve(true);
+      };
+
+      fr.readAsArrayBuffer(blob);
     });
-
-    fr.readAsArrayBuffer(blob);
-
-    try {
-      // lottie-player
-      const lottiePlayer: any = document.querySelector("lottie-player");
-      // or load via a Bodymovin JSON string/object
-      lottiePlayer.load(json);
-    } catch (err) {
-      console.log('Mark as an error : maybe lottie issue');
-      return false;
-    }
-
-    return true;
   }
 
   const compareImg = (img1: any, img2: any) => {
@@ -373,28 +402,28 @@ function App() {
       </header>
 
       
-      <div style={{ display: 'flex' }}>
-        <canvas id="thorvg-canvas" width={size} height={size} />
-        <canvas id="lottie-canvas" width={size} height={size} />
-        <img id="diff-img" width={size} height={size} />
+      <div style={{ display: 'flex', overflowX: 'scroll', width: '100%' }}>
+        <canvas id="thorvg-canvas" width={testingSize} height={testingSize} />
+        <canvas id="lottie-canvas" width={testingSize} height={testingSize} />
+        <img id="diff-img" width={testingSize} height={testingSize} />
 
         <lottie-player
           class="lottie-player"
           // autoplay
           // loop={}
           // controls
-          width={size}
-          style={{ width: size, height: size }}
+          width={testingSize}
+          style={{ width: testingSize, height: testingSize }}
           mode="normal"
         />
-        <img className="lottie-img" style={{ width: size, height: size }} />
+        <img className="lottie-img" style={{ width: testingSize, height: testingSize }} />
       </div>
     </div>
 
-    <div style={{ display: 'flex' }}>
+    {/* <div style={{ display: 'flex' }}>
       <canvas id="thorvg-output-canvas" width={512} height={512} />
       <canvas id="lottie-output-canvas" width={512} height={512} />
-    </div>
+    </div> */}
 
     <div className='result' style={{ padding: 24 }}>
       <div className='result-row' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
