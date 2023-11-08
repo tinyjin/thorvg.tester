@@ -6,6 +6,7 @@ import "@lottiefiles/lottie-player";
 import targetList from './index.json';
 // @ts-ignore
 import { OpenCvProvider, useOpenCv } from 'opencv-react';
+import resemble from 'resemblejs';
 
 declare global {
   interface Window { 
@@ -76,26 +77,21 @@ function App() {
         // start();
       };
     };
-
-    // @ts-ignore
-    window.test = async () => {
-      const c = await run('/images/2464.json');
-      console.log(c);
-    }
-
-    // @ts-ignore
-    window.compare = compareImg;
   }, []);
 
   const start = async () => {
     for (const targetName of targetList) {
+      if (!targetName.endsWith('.json')) {
+        continue;
+      }
+
       let logText = '';
 
       setCurrentFile(targetName);
       setCurrentCompability('Checking...');
 
       const compability = await run(`/images/${targetName}`);
-      const isCompability = compability >= 50;
+      const isCompability = compability >= 90;
 
       logText = `${isCompability ? '✅' : '❗'} ${targetName} - Compability: ${compability}%`;
 
@@ -128,16 +124,19 @@ function App() {
         lottieCanvas.getContext('2d').clearRect(0, 0, size, size);
 
         setTimeout(async () => {
-          await load(name);
+          const isLoaded = await load(name);
+          if (!isLoaded) {
+            resolve(0);
+          }
 
           setTimeout(() => {
             test();
-            setTimeout(() => {
-              const compability = test();
+            setTimeout(async () => {
+              const compability = await test();
               resolve(compability);
             }, 100);
           }, 100);
-        }, 100);
+        }, 200);
       } catch (err) {
         reject(err);  // ! return err; => reject(err);
       }
@@ -156,15 +155,18 @@ function App() {
   
       const thorvgCanvas = document.querySelector('#thorvg-canvas');
       const lottieCanvas = document.querySelector('#lottie-canvas');
+      const diffImg = document.querySelector('#diff-img');
       
       const thorvgCloneCanvas = thorvgCanvas?.cloneNode(true) as any;
       const lottieCloneCanvas = lottieCanvas?.cloneNode(true) as any;
+      const diffCloneImg = diffImg?.cloneNode(true) as any;
   
       thorvgCloneCanvas.getContext('2d').drawImage(thorvgCanvas, 0, 0);
       lottieCloneCanvas.getContext('2d').drawImage(lottieCanvas, 0, 0);
   
       resultRow?.appendChild(thorvgCloneCanvas);
       resultRow?.appendChild(lottieCloneCanvas);
+      resultRow?.appendChild(diffCloneImg);
 
       setTimeout(() => {
         resolve();
@@ -172,7 +174,7 @@ function App() {
     });
   }
 
-  const test = () => {
+  const test = async () => {
     // @ts-ignore
     const origin: any = document.querySelector('.lottie-player').shadowRoot.querySelector('svg');
     const img: any = document.querySelector('.lottie-img');
@@ -186,7 +188,13 @@ function App() {
     var xml = new XMLSerializer().serializeToString(origin);
     
     // make it base64
-    var svg64 = btoa(xml);
+    var svg64 = '';
+    try {
+      svg64 = btoa(xml);
+    } catch (err) {
+      return 0;
+    }
+
     var b64Start = 'data:image/svg+xml;base64,';
     
     // prepend a "header"
@@ -199,24 +207,53 @@ function App() {
     }
     img.src = image64;
 
-    // OpenCV diff
-    const compabilityOpenCV = compareImg(thorvgCanvas, lottieCanvas);
-    return compabilityOpenCV;
+    // resembleJS diff
+    const compabilityWithResembleJS = await diffWithResembleJS(thorvgCanvas, lottieCanvas);
+    return compabilityWithResembleJS;
 
-    // Pixel diff
+    // // OpenCV diff
+    // const compabilityOpenCV = compareImg(thorvgCanvas, lottieCanvas);
+    // // return compabilityOpenCV;
+
+    // // Pixel diff
     // const thorvgPixels = getPixelsFromCanvas(thorvgCanvas);
     // const lottiePixels = getPixelsFromCanvas(lottieCanvas);
 
     // const diff = arrayDiff(thorvgPixels, lottiePixels);
 
     // const compability = 100 - Math.ceil(diff / thorvgPixels.length * 100);
-    // return compability
+    // return (compability + compabilityOpenCV) / 2;
+  }
+
+  const diffWithResembleJS = async (thorvgCanvas: any, lottieCanvas: any): Promise<number> => {
+    const thorvgURL = thorvgCanvas.toDataURL("image/png");
+    const lottieURL = lottieCanvas.toDataURL("image/png");
+
+    return new Promise((resolve, reject) => {
+      resemble.compare(thorvgURL, lottieURL, {}, (err: any, data: any) => {
+        console.log('resembleJS');
+        console.log(data);
+
+        const { misMatchPercentage, getImageDataUrl } = data;
+        const diffImg = document.querySelector('#diff-img') as any;
+        diffImg.src = getImageDataUrl();
+
+        resolve(100 - misMatchPercentage);
+      });
+    });
   }
 
   const load = async (name: string) => {
     // thorvg
-    // let json = JSON.stringify(target);
     json = await (await fetch(name)).text();
+
+    // check JSON
+    try {
+      JSON.parse(json);
+    } catch (err) {
+      return false;
+    }
+
     const blob = new Blob([json], {type:"application/json"});
     const fr = new FileReader();
 
@@ -230,10 +267,17 @@ function App() {
 
     fr.readAsArrayBuffer(blob);
 
-    // lottie-player
-    const lottiePlayer: any = document.querySelector("lottie-player");
-    // or load via a Bodymovin JSON string/object
-    lottiePlayer.load(json);
+    try {
+      // lottie-player
+      const lottiePlayer: any = document.querySelector("lottie-player");
+      // or load via a Bodymovin JSON string/object
+      lottiePlayer.load(json);
+    } catch (err) {
+      console.log('Mark as an error : maybe lottie issue');
+      return false;
+    }
+
+    return true;
   }
 
   const compareImg = (img1: any, img2: any) => {
@@ -332,6 +376,7 @@ function App() {
       <div style={{ display: 'flex' }}>
         <canvas id="thorvg-canvas" width={size} height={size} />
         <canvas id="lottie-canvas" width={size} height={size} />
+        <img id="diff-img" width={size} height={size} />
 
         <lottie-player
           class="lottie-player"
