@@ -17,6 +17,7 @@ declare global {
 
 const testingSize = 800;
 const size = 100;
+const successPercentage = 95;
 
 let player: any;
 let json: any;
@@ -99,7 +100,7 @@ function App() {
       setCurrentCompability('Checking...');
 
       const compability = await run(`/images/${targetName}`);
-      const isCompability = compability >= 90;
+      const isCompability = compability >= successPercentage;
 
       logText = `${isCompability ? '✅' : '❗'} ${targetName} - Compability: ${compability}%`;
 
@@ -111,7 +112,11 @@ function App() {
 
       // save result 
       try {
-        await saveResult(logText);
+        if (isCompability) {
+          await saveResult(logText);
+        } else {
+          await saveError(logText);
+        }
       } catch (err) {
         // TODO : save error
         console.log(err);
@@ -127,7 +132,9 @@ function App() {
       try {
         const thorvgCanvas: any = document.querySelector("#thorvg-canvas");
         const lottieCanvas: any = document.querySelector("#lottie-canvas");
+        const diffImg: any = document.querySelector("#diff-img");
 
+        diffImg.setAttribute('src', '');
         thorvgCanvas.getContext('2d').clearRect(0, 0, testingSize, testingSize);
         lottieCanvas.getContext('2d').clearRect(0, 0, testingSize, testingSize);
 
@@ -192,30 +199,64 @@ function App() {
     });
   }
 
-  const drawSvgIntoCanvas = async (): Promise<void> => {
-    // @ts-ignore
-    const svg: any = document.querySelector('.lottie-player').shadowRoot.querySelector('svg');
-    const img: any = document.querySelector('img.lottie-img');
-    const canvas: any = document.querySelector("#lottie-canvas");
-
+  const saveError = async (logText: string): Promise<void> => {
     return new Promise((resolve, reject) => {
+      const resultBoard = document.querySelector('.result-error');
+      const resultRow = document.querySelector('.result-error-row')?.cloneNode(true) as any;
+      resultBoard?.appendChild(resultRow);
+  
+      const resultText = document.createElement('span');
+      resultText.innerText = logText;
+      resultRow?.appendChild(resultText);
+  
+      const thorvgCanvas = document.querySelector('#thorvg-canvas');
+      const lottieCanvas = document.querySelector('#lottie-canvas');
+      const diffImg = document.querySelector('#diff-img');
+      
+      const thorvgCloneCanvas = thorvgCanvas?.cloneNode(true) as any;
+      const lottieCloneCanvas = lottieCanvas?.cloneNode(true) as any;
+      const diffCloneImg = diffImg?.cloneNode(true) as any;
+
+      thorvgCloneCanvas.width = size;
+      thorvgCloneCanvas.height = size;
+
+      lottieCloneCanvas.width = size;
+      lottieCloneCanvas.height = size;
+
+      diffCloneImg.width = size;
+      diffCloneImg.height = size;
+  
+      thorvgCloneCanvas.getContext('2d').drawImage(thorvgCanvas, 0, 0, size, size);
+      lottieCloneCanvas.getContext('2d').drawImage(lottieCanvas, 0, 0, size, size);
+  
+      resultRow?.appendChild(thorvgCloneCanvas);
+      resultRow?.appendChild(lottieCloneCanvas);
+      resultRow?.appendChild(diffCloneImg);
+
+      setTimeout(() => {
+        resolve();
+      }, 150);
+    });
+  }
+
+  const drawSvgIntoCanvas = async (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      // @ts-ignore
+      const svg: any = document.querySelector('.lottie-player').shadowRoot.querySelector('svg')?.cloneNode(true);
       svg.setAttribute('width', `${testingSize}px`);
       svg.setAttribute('height', `${testingSize}px`);
-      var xml = new XMLSerializer().serializeToString(svg);
-      
-      // make it base64
-      var svg64 = '';
-      try {
-        svg64 = btoa(xml);
-      } catch (err) {
-        console.log(err);
-        reject();
-      }
+  
+      const svgString = svg.outerHTML;
+  
+      const URL = window.URL || window.webkitURL || window;
+      const blob = new Blob([svgString], {type:'image/svg+xml;charset=utf-8'});
+  
+      const blobURL = URL.createObjectURL(blob);
+      const img = new Image();
+  
+      const canvas: any = document.querySelector("#lottie-canvas");
 
-      var b64Start = 'data:image/svg+xml;base64,';
-      
-      // prepend a "header"
-      var image64 = b64Start + svg64;
+      img.src = blobURL;
       
       // set it as the source of the img element
       img.onload = () => {
@@ -225,11 +266,9 @@ function App() {
       }
 
       img.onerror = (err: any) => {
-        console.log('error on loading image' + err);
+        console.error('error on loading image' + err);
         reject();
       }
-
-      img.src = image64;
     });
   }
 
@@ -314,8 +353,8 @@ function App() {
 
           const playerTotalFrames = Math.floor(player.totalFrame);
           const lottieTotalFrames = Math.floor(lottiePlayer.getLottie().totalFrames);
-          const targetFrame = 10;
-          // const targetFrame = Math.floor(playerTotalFrames / 1.5);
+          // const targetFrame = playerTotalFrames - 5;
+          const targetFrame = Math.floor(playerTotalFrames / 1.5);
         
           player.seek(targetFrame);
           lottiePlayer.seek(targetFrame);
@@ -445,7 +484,6 @@ function App() {
           style={{ width: testingSize, height: testingSize }}
           mode="normal"
         />
-        <img className="lottie-img" width={testingSize} height={testingSize} style={{ width: testingSize, height: testingSize }} />
       </div>
     </div>
 
@@ -454,8 +492,15 @@ function App() {
       <canvas id="lottie-output-canvas" width={512} height={512} />
     </div> */}
 
-    <div className='result' style={{ padding: 24 }}>
-      <div className='result-row' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
+      <div className='result-error' style={{ padding: 24 }}>
+        <div className='result-error-row' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+        </div>
+      </div>
+
+      <div className='result' style={{ padding: 24 }}>
+        <div className='result-row' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+        </div>
       </div>
     </div>
     </OpenCvProvider>
