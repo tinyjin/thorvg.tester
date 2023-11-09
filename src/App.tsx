@@ -76,7 +76,7 @@ function App() {
       const compability = await run(`/images/${targetName}`);
       const isCompability = compability >= successPercentage;
 
-      logText = `${isCompability ? '✅' : '❗'} ${targetName} - Similarity: ${compability}%`;
+      logText = `${isCompability ? '✅' : '❗'} ${targetName} \n * Similarity: ${compability}%`;
 
       setCurrentCompability('' + compability + '%');
       console.info(logText);
@@ -141,6 +141,7 @@ function App() {
   
       const resultText = document.createElement('span');
       resultText.innerText = logText;
+      resultText.style.width = '200px';
       resultRow?.appendChild(resultText);
   
       const thorvgCanvas = document.querySelector('#thorvg-canvas');
@@ -180,6 +181,7 @@ function App() {
       resultBoard?.appendChild(resultRow);
   
       const resultText = document.createElement('span');
+      resultText.style.width = '200px';
       resultText.innerText = logText;
       resultRow?.appendChild(resultText);
   
@@ -327,8 +329,7 @@ function App() {
 
           const playerTotalFrames = Math.floor(player.totalFrame);
           const lottieTotalFrames = Math.floor(lottiePlayer.getLottie().totalFrames);
-          // const targetFrame = playerTotalFrames - 5;
-          const targetFrame = Math.floor(playerTotalFrames / 1.5);
+          const targetFrame = Math.floor(playerTotalFrames / 2); // Run with middle frame
         
           player.seek(targetFrame);
           lottiePlayer.seek(targetFrame);
@@ -466,14 +467,26 @@ function App() {
       <canvas id="lottie-output-canvas" width={512} height={512} />
     </div> */}
 
-    <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#f6f6f6' }}>
       <div className='result-error' style={{ padding: 24 }}>
-        <div className='result-error-row' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+        <div className='result-error-row-first' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'start', marginBottom: 20, fontWeight: 'bold' }}>
+          <div style={{ width: 200, textAlign: 'center' }}>Name</div>
+          <div style={{ width: 100, textAlign: 'center' }}>ThorVG</div>
+          <div style={{ width: 100, textAlign: 'center' }}>lottie-js</div>
+          <div style={{ width: 100, textAlign: 'center' }}>Diff</div>
+        </div>
+        <div className='result-error-row' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #bdbdbd' }}>
         </div>
       </div>
 
       <div className='result' style={{ padding: 24 }}>
-        <div className='result-row' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+        <div className='result-error-row-first' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'start', marginBottom: 20, fontWeight: 'bold' }}>
+          <div style={{ width: 200, textAlign: 'center' }}>Name</div>
+          <div style={{ width: 100, textAlign: 'center' }}>ThorVG</div>
+          <div style={{ width: 100, textAlign: 'center' }}>lottie-js</div>
+          <div style={{ width: 100, textAlign: 'center' }}>Diff</div>
+        </div>
+        <div className='result-row' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #bdbdbd' }}>
         </div>
       </div>
     </div>
