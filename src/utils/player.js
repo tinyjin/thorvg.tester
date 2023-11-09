@@ -79,6 +79,12 @@ class Player {
 		this.tvg.frame(0);
 	}
 
+	seek(frame) {
+		this.frame(frame);
+		this.update();
+		this.render();
+	}
+
 	frame(curFrame) {
 		this.pause();
 		this.curFrame = curFrame;

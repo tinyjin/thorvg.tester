@@ -12,13 +12,10 @@ declare global {
   interface Window { 
     Module: any; 
     player: any; 
-    // cv: typeof import('mirada/dist/src/types/opencv/_types');
   }
 }
 
-// window.cv = cv;
-
-const testingSize = 512;
+const testingSize = 800;
 const size = 100;
 
 let player: any;
@@ -91,7 +88,7 @@ function App() {
       return 1;
     });
 
-    for (const targetName of targets) {
+    for (const targetName of targetList) {
       if (!targetName.endsWith('.json') || targetName === 'index.json') {
         continue;
       }
@@ -109,16 +106,16 @@ function App() {
       setCurrentCompability('' + compability + '%');
       console.info(logText);
       log.push(logText);
-      
-      // try {
-      // } catch (err) {
-      //   log.push(`⚠️ ${targetName} - OpenCV Error catched`);
-      // }
 
       setLog(log.slice());
 
       // save result 
-      await saveResult(logText);
+      try {
+        await saveResult(logText);
+      } catch (err) {
+        // TODO : save error
+        console.log(err);
+      }
 
       cnt += 1;
       setCnt(cnt);
@@ -140,12 +137,13 @@ function App() {
             resolve(0);
           }
 
-          setTimeout(() => {
-            test();
-            setTimeout(async () => {
+          setTimeout(async () => {
+            try {
               const compability = await test();
               resolve(compability);
-            }, 100);
+            } catch (err) {
+              resolve(0);
+            }
           }, 100);
         }, 200);
       } catch (err) {
@@ -194,38 +192,58 @@ function App() {
     });
   }
 
-  const test = async () => {
+  const drawSvgIntoCanvas = async (): Promise<void> => {
     // @ts-ignore
-    const origin: any = document.querySelector('.lottie-player').shadowRoot.querySelector('svg');
-    const img: any = document.querySelector('.lottie-img');
-    
+    const svg: any = document.querySelector('.lottie-player').shadowRoot.querySelector('svg');
+    const img: any = document.querySelector('img.lottie-img');
+    const canvas: any = document.querySelector("#lottie-canvas");
+
+    return new Promise((resolve, reject) => {
+      svg.setAttribute('width', `${testingSize}px`);
+      svg.setAttribute('height', `${testingSize}px`);
+      var xml = new XMLSerializer().serializeToString(svg);
+      
+      // make it base64
+      var svg64 = '';
+      try {
+        svg64 = btoa(xml);
+      } catch (err) {
+        console.log(err);
+        reject();
+      }
+
+      var b64Start = 'data:image/svg+xml;base64,';
+      
+      // prepend a "header"
+      var image64 = b64Start + svg64;
+      
+      // set it as the source of the img element
+      img.onload = () => {
+          // draw the image onto the canvas
+          canvas.getContext('2d').drawImage(img, 0, 0);
+          resolve();
+      }
+
+      img.onerror = (err: any) => {
+        console.log('error on loading image' + err);
+        reject();
+      }
+
+      img.src = image64;
+    });
+  }
+
+  const test = async () => {
     const thorvgCanvas: any = document.querySelector("#thorvg-canvas");
     const lottieCanvas: any = document.querySelector("#lottie-canvas");
 
-    // get svg data
-    origin.setAttribute('width', `${testingSize}px`);
-    origin.setAttribute('height', `${testingSize}px`);
-    var xml = new XMLSerializer().serializeToString(origin);
-    
-    // make it base64
-    var svg64 = '';
+    // copy lottie-svg to canvas
     try {
-      svg64 = btoa(xml);
+      await drawSvgIntoCanvas();
     } catch (err) {
+      console.log(err);
       return 0;
     }
-
-    var b64Start = 'data:image/svg+xml;base64,';
-    
-    // prepend a "header"
-    var image64 = b64Start + svg64;
-    
-    // set it as the source of the img element
-    img.onload = function() {
-        // draw the image onto the canvas
-        lottieCanvas.getContext('2d').drawImage(img, 0, 0);
-    }
-    img.src = image64;
 
     // resembleJS diff
     const compabilityWithResembleJS = await diffWithResembleJS(thorvgCanvas, lottieCanvas);
@@ -266,11 +284,10 @@ function App() {
     return new Promise<boolean>(async (resolve, reject) => {
       // thorvg
       json = await (await fetch(name)).text();
+      const lottiePlayer: any = document.querySelector("lottie-player");
 
       try {
         // lottie-player
-        const lottiePlayer: any = document.querySelector("lottie-player");
-        // or load via a Bodymovin JSON string/object
         lottiePlayer.load(json);
       } catch (err) {
         console.log('Mark as an error : maybe lottie issue');
@@ -294,15 +311,27 @@ function App() {
 
         try {
           player.loadBytes(bytes);
-          player.frame(0);
-          player.update();
-          // console.log(player.totalFrame);
+
+          const playerTotalFrames = Math.floor(player.totalFrame);
+          const lottieTotalFrames = Math.floor(lottiePlayer.getLottie().totalFrames);
+          const targetFrame = 10;
+          // const targetFrame = Math.floor(playerTotalFrames / 1.5);
+        
+          player.seek(targetFrame);
+          lottiePlayer.seek(targetFrame);
+
+          console.log(`totalFrames ${playerTotalFrames} ${lottieTotalFrames}`);
         } catch (err) {
           console.log(err);
-          resolve(false);
+          return resolve(false);
         }
 
         resolve(true);
+
+        // delay if needed
+        // setTimeout(() => {
+        //   resolve(true);
+        // }, 2000);
       };
 
       fr.readAsArrayBuffer(blob);
@@ -412,11 +441,11 @@ function App() {
           // autoplay
           // loop={}
           // controls
-          width={testingSize}
+          width={testingSize + 'px'}
           style={{ width: testingSize, height: testingSize }}
           mode="normal"
         />
-        <img className="lottie-img" style={{ width: testingSize, height: testingSize }} />
+        <img className="lottie-img" width={testingSize} height={testingSize} style={{ width: testingSize, height: testingSize }} />
       </div>
     </div>
 
