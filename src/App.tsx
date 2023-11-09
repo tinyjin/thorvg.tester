@@ -17,37 +17,11 @@ declare global {
 
 const testingSize = 800;
 const size = 100;
-const successPercentage = 95;
+const successPercentage = 98;
 
 let player: any;
 let json: any;
 let cv: any;
-
-const getPixelsFromCanvas = (canvas: any) => {
-  var context = canvas.getContext('2d');
-  var imgd = context.getImageData(0, 0, size, size);
-  var pix = imgd.data;
-
-  // for (var i = 0, n = pix.length; i < n; i += 4) {
-  //   pix[i  ] = 255 - pix[i  ]; // red
-  //   pix[i+1] = 255 - pix[i+1]; // green
-  //   pix[i+2] = 255 - pix[i+2]; // blue
-  //   // i+3 is alpha (the fourth element)
-  // }
-
-  return pix;
-}
-
-function arrayDiff(a: any, b: any) {
-  let cnt = 0;
-  for (let i = 0; i < a.length; i++) {
-      if (a[i] !== b[i]) {
-        cnt += 1;
-      }
-  }
-  return cnt;
-};
-
 
 function App() {
   const initialized = useRef(false)
@@ -102,7 +76,7 @@ function App() {
       const compability = await run(`/images/${targetName}`);
       const isCompability = compability >= successPercentage;
 
-      logText = `${isCompability ? '✅' : '❗'} ${targetName} - Compability: ${compability}%`;
+      logText = `${isCompability ? '✅' : '❗'} ${targetName} - Similarity: ${compability}%`;
 
       setCurrentCompability('' + compability + '%');
       console.info(logText);
