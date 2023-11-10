@@ -490,7 +490,7 @@ function App() {
       <canvas id="lottie-output-canvas" width={512} height={512} />
     </div> */}
 
-    <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#f6f6f6' }}>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'center', backgroundColor: '#f6f6f6' }}>
       <div className='result-error' style={{ padding: 24 }}>
         <div className='result-error-row-first' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'start', marginBottom: 20, fontWeight: 'bold' }}>
           <div style={{ width: 200, textAlign: 'center' }}>Name</div>
