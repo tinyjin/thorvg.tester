@@ -3,10 +3,10 @@ import logo from './logo.svg';
 import './App.css';
 import Player from './utils/player';
 import "@lottiefiles/lottie-player";
-import targetList from './index.json';
 // @ts-ignore
 import { OpenCvProvider, useOpenCv } from 'opencv-react';
 import resemble from 'resemblejs';
+import { FileUploader } from "react-drag-drop-files";
 
 declare global {
   interface Window { 
@@ -23,8 +23,14 @@ let player: any;
 let json: any;
 let cv: any;
 
+
+let fileList = [];
+
 function App() {
-  const initialized = useRef(false)
+  const initialized = useRef(false);
+  const [uploaded, setUploaded] = useState(false);
+  const [fileLength, setFileLength] = useState(0);
+  
   const [curerntFile, setCurrentFile] = useState('');
   const [currentCompability, setCurrentCompability] = useState('');
   let [cnt, setCnt] = useState(0);
@@ -54,29 +60,17 @@ function App() {
     };
   }, []);
 
-  const start = async () => {
-    // sort by name
-    const targets = targetList.sort((a, b) => {
-      if (a < b) {
-        return -1;
-      }
-      return 1;
-    });
+  const startByUploading = async (fileList: any) => {
+    let logText = '';
 
-    for (const targetName of targetList) {
-      if (!targetName.endsWith('.json') || targetName === 'index.json') {
-        continue;
-      }
-
-      let logText = '';
-
-      setCurrentFile(targetName);
+    for (const file of fileList) {
+      setCurrentFile(file.name);
       setCurrentCompability('Checking...');
 
-      const compability = await run(`/images/${targetName}`);
+      const compability = await run(file);
       const isCompability = compability >= successPercentage;
 
-      logText = `${isCompability ? '✅' : '❗'} ${targetName} \n * Similarity: ${compability}%`;
+      logText = `${isCompability ? '✅' : '❗'} ${file.name} \n * Similarity: ${compability}%`;
 
       setCurrentCompability('' + compability + '%');
       console.info(logText);
@@ -99,9 +93,9 @@ function App() {
       cnt += 1;
       setCnt(cnt);
     }
-  }
+  };
 
-  const run = async (name: string): Promise<number> => {
+  const run = async (file: File): Promise<number> => {
     return new Promise((resolve, reject) => { // !
       try {
         const thorvgCanvas: any = document.querySelector("#thorvg-canvas");
@@ -113,7 +107,7 @@ function App() {
         lottieCanvas.getContext('2d').clearRect(0, 0, testingSize, testingSize);
 
         setTimeout(async () => {
-          const isLoaded = await load(name);
+          const isLoaded = await load(file);
           if (!isLoaded) {
             resolve(0);
           }
@@ -295,60 +289,63 @@ function App() {
   }
 
 
-  const load = async (name: string) => {
+  const load = async (file: File) => {
     return new Promise<boolean>(async (resolve, reject) => {
-      // thorvg
-      json = await (await fetch(name)).text();
       const lottiePlayer: any = document.querySelector("lottie-player");
-
-      try {
-        // lottie-player
-        lottiePlayer.load(json);
-      } catch (err) {
-        console.log('Mark as an error : maybe lottie issue');
-        resolve(false);
-      }
-  
-      // check JSON
-      try {
-        JSON.parse(json);
-      } catch (err) {
-        resolve(false);
-      }
-  
-      const blob = new Blob([json], {type:"application/json"});
-      const fr = new FileReader();
-
-      fr.onloadend = () => {
-        const bytes = fr.result as any;
-        console.log(bytes);
-        
+      const reader = new FileReader();
+      reader.readAsText(file);
+      reader.onload = async () => {
+        const json = reader.result as any;
 
         try {
-          player.loadBytes(bytes);
-
-          const playerTotalFrames = Math.floor(player.totalFrame);
-          const lottieTotalFrames = Math.floor(lottiePlayer.getLottie().totalFrames);
-          const targetFrame = Math.floor(playerTotalFrames / 2); // Run with middle frame
-        
-          player.seek(targetFrame);
-          lottiePlayer.seek(targetFrame);
-
-          console.log(`totalFrames ${playerTotalFrames} ${lottieTotalFrames}`);
+          // lottie-player
+          lottiePlayer.load(json);
         } catch (err) {
-          console.log(err);
-          return resolve(false);
+          console.log('Mark as an error : maybe lottie issue');
+          resolve(false);
         }
+    
+        // check JSON
+        try {
+          JSON.parse(json);
+        } catch (err) {
+          resolve(false);
+        }
+    
+        const blob = new Blob([json], {type:"application/json"});
+        const fr = new FileReader();
 
-        resolve(true);
+        fr.onloadend = () => {
+          const bytes = fr.result as any;
+          console.log(bytes);
+          
 
-        // delay if needed
-        // setTimeout(() => {
-        //   resolve(true);
-        // }, 2000);
+          try {
+            player.loadBytes(bytes);
+
+            const playerTotalFrames = Math.floor(player.totalFrame);
+            const lottieTotalFrames = Math.floor(lottiePlayer.getLottie().totalFrames);
+            const targetFrame = Math.floor(playerTotalFrames / 2); // Run with middle frame
+          
+            player.seek(targetFrame);
+            lottiePlayer.seek(targetFrame);
+
+            console.log(`totalFrames ${playerTotalFrames} ${lottieTotalFrames}`);
+          } catch (err) {
+            console.log(err);
+            return resolve(false);
+          }
+
+          resolve(true);
+
+          // delay if needed
+          // setTimeout(() => {
+          //   resolve(true);
+          // }, 2000);
+        };
+
+        fr.readAsArrayBuffer(blob);
       };
-
-      fr.readAsArrayBuffer(blob);
     });
   }
 
@@ -429,15 +426,41 @@ function App() {
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         {
-          cnt >= targetList.length - 1 ? <span>DONE</span>
+          (cnt !== 0 && cnt >= fileLength - 1) ? <p>DONE</p>
           :
           <p>
             {curerntFile} - {currentCompability}
           </p>
         }
-        <div style={{ cursor: 'pointer' }} onClick={start}>START</div>
+        {/* <div style={{ cursor: 'pointer' }} onClick={start}>START</div> */}
+
+        {
+          uploaded ||
+          <FileUploader 
+            handleChange={(fileList: any) => {
+              startByUploading(fileList);
+              setFileLength(fileList.length);
+              setUploaded(true);
+            }}
+            dropMessageStyle={{
+              color: 'white',
+              height: 200,
+            }}
+            children={
+              <div
+                style={{ height: 150, border: '1px solid #bdbdbd', padding: 20, display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#bdbdbd', fontSize: 24 }}
+              >
+                <p style={{ lineHeight: '32px' }}>Upload or drop <br/>LottieFiles here to test</p>
+              </div>
+            }
+            name="file"
+            types={['json']}
+            multiple
+          />
+        }
+
         
-        <div style={{ marginTop: 32, fontSize: 13, height: 300, overflowY: 'scroll' }}>
+        <div style={{ marginBottom: 32, fontSize: 13, height: 200, overflowY: 'scroll' }}>
           {
             log.map((line, i) => <div style={{ marginBottom: 4 }}>{line}<br/></div>)
           }
@@ -445,7 +468,7 @@ function App() {
       </header>
 
       
-      <div style={{ display: 'flex', overflowX: 'scroll', width: '100%' }}>
+      <div style={{ display: 'none', overflowX: 'scroll', width: '100%' }}>
         <canvas id="thorvg-canvas" width={testingSize} height={testingSize} />
         <canvas id="lottie-canvas" width={testingSize} height={testingSize} />
         <img id="diff-img" width={testingSize} height={testingSize} />

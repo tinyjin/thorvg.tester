@@ -18,6 +18,7 @@
     "opencv-react": "^0.0.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-drag-drop-files": "^2.3.10",
     "react-scripts": "5.0.1",
     "resemblejs": "^5.0.0",
     "typescript": "^4.9.5",
@@ -29,10 +30,9 @@
     "crypto": false
   },
   "scripts": {
-    "start": "DISABLE_ESLINT_PLUGIN=true react-scripts start",
-    "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
+    "start": "DISABLE_ESLINT_PLUGIN=true craco start",
+    "build": "DISABLE_ESLINT_PLUGIN=true craco build",
+    "test": "craco test",
     "react-start": "BROWSER=none npm start",
     "electron-start": "ELECTRON_START_URL=http://localhost:3000 electron .",
     "electron-pack": "npm build && electron-builder build -c.extraMetadata.main=build/Main.js"
@@ -56,6 +56,7 @@
     ]
   },
   "devDependencies": {
+    "@craco/craco": "^7.1.0",
     "@types/resemblejs": "^4.1.3"
   }
 }
