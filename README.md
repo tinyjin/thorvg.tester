@@ -6,8 +6,8 @@
 
 ThorVG Tester is unofficial graphic renderer testing tool for ThorVG Engine. It works on web browser and detects rendering error by comparing canvas outputs, automatically.
 
+https://github.com/tinyjin/thorvg.tester/assets/11167117/b4df338a-d4e1-4671-b1ca-c4ccc1fdf3ec
 
-Uploading demo.mov…
 
 
 ## Usage
