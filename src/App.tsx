@@ -1,12 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
-import logo from './logo.svg';
-import './App.css';
-import Player from './utils/player';
 import "@lottiefiles/lottie-player";
+import { useEffect, useRef, useState } from 'react';
+import './App.css';
+import logo from './logo.svg';
+import Player from './utils/player';
 // @ts-ignore
-import { OpenCvProvider, useOpenCv } from 'opencv-react';
-import resemble from 'resemblejs';
+import { OpenCvProvider } from 'opencv-react';
 import { FileUploader } from "react-drag-drop-files";
+import { diffWithResembleJS } from './utils/diff';
 
 declare global {
   interface Window { 
@@ -20,7 +20,6 @@ const size = 100;
 const successPercentage = 98;
 
 let player: any;
-let json: any;
 let cv: any;
 
 
@@ -259,35 +258,9 @@ function App() {
     return compabilityWithResembleJS;
 
     // // OpenCV diff
-    // const compabilityOpenCV = compareImg(thorvgCanvas, lottieCanvas);
-    // // return compabilityOpenCV;
-
-    // // Pixel diff
-    // const thorvgPixels = getPixelsFromCanvas(thorvgCanvas);
-    // const lottiePixels = getPixelsFromCanvas(lottieCanvas);
-
-    // const diff = arrayDiff(thorvgPixels, lottiePixels);
-
-    // const compability = 100 - Math.ceil(diff / thorvgPixels.length * 100);
-    // return (compability + compabilityOpenCV) / 2;
+    // const compabilityOpenCV = diffWithOpenCV(cv, thorvgCanvas, lottieCanvas);
+    // return compabilityOpenCV;
   }
-
-  const diffWithResembleJS = async (thorvgCanvas: any, lottieCanvas: any): Promise<number> => {
-    const thorvgURL = thorvgCanvas.toDataURL("image/png");
-    const lottieURL = lottieCanvas.toDataURL("image/png");
-
-    return new Promise((resolve, reject) => {
-      resemble.compare(thorvgURL, lottieURL, {}, (err: any, data: any) => {
-        const { misMatchPercentage, getImageDataUrl } = data;
-        const diffImg = document.querySelector('#diff-img') as any;
-        diffImg.src = getImageDataUrl();
-        
-        // console.log(data);
-        resolve(100 - misMatchPercentage);
-      });
-    });
-  }
-
 
   const load = async (file: File) => {
     return new Promise<boolean>(async (resolve, reject) => {
@@ -485,7 +458,7 @@ function App() {
       </div>
     </div>
 
-    {/* <div style={{ display: 'flex' }}>
+    {/* <div style={{ display: 'none' }}>
       <canvas id="thorvg-output-canvas" width={512} height={512} />
       <canvas id="lottie-output-canvas" width={512} height={512} />
     </div> */}
