@@ -7,6 +7,8 @@ import Player from './utils/player';
 import { OpenCvProvider } from 'opencv-react';
 import { FileUploader } from "react-drag-drop-files";
 import { diffWithResembleJS } from './utils/diff';
+import { testingSize, size, successPercentage } from "./utils/constant";
+import { drawSvgIntoCanvas } from "./utils/drawer";
 
 declare global {
   interface Window { 
@@ -14,10 +16,6 @@ declare global {
     player: any; 
   }
 }
-
-const testingSize = 800;
-const size = 100;
-const successPercentage = 98;
 
 let player: any;
 let cv: any;
@@ -205,46 +203,17 @@ function App() {
     });
   }
 
-  const drawSvgIntoCanvas = async (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // @ts-ignore
-      const svg: any = document.querySelector('.lottie-player').shadowRoot.querySelector('svg')?.cloneNode(true);
-      svg.setAttribute('width', `${testingSize}px`);
-      svg.setAttribute('height', `${testingSize}px`);
-  
-      const svgString = svg.outerHTML;
-  
-      const URL = window.URL || window.webkitURL || window;
-      const blob = new Blob([svgString], {type:'image/svg+xml;charset=utf-8'});
-  
-      const blobURL = URL.createObjectURL(blob);
-      const img = new Image();
-  
-      const canvas: any = document.querySelector("#lottie-canvas");
-
-      img.src = blobURL;
-      
-      // set it as the source of the img element
-      img.onload = () => {
-          // draw the image onto the canvas
-          canvas.getContext('2d').drawImage(img, 0, 0);
-          resolve();
-      }
-
-      img.onerror = (err: any) => {
-        console.error('error on loading image' + err);
-        reject();
-      }
-    });
-  }
-
   const test = async () => {
     const thorvgCanvas: any = document.querySelector("#thorvg-canvas");
     const lottieCanvas: any = document.querySelector("#lottie-canvas");
 
     // copy lottie-svg to canvas
     try {
-      await drawSvgIntoCanvas();
+      // @ts-ignore
+      const svg: any = document.querySelector('.lottie-player').shadowRoot.querySelector('svg');
+      const canvas: any = document.querySelector("#lottie-canvas");
+
+      await drawSvgIntoCanvas(svg, canvas);
     } catch (err) {
       console.log(err);
       return 0;
