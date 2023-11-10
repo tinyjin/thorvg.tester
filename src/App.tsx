@@ -59,7 +59,7 @@ function App() {
     };
   }, []);
 
-  const startByUploading = async (fileList: any) => {
+  const start = async (fileList: any) => {
     let logText = '';
 
     for (const file of fileList) {
@@ -405,13 +405,12 @@ function App() {
             {curerntFile} - {currentCompability}
           </p>
         }
-        {/* <div style={{ cursor: 'pointer' }} onClick={start}>START</div> */}
 
         {
           uploaded ||
           <FileUploader 
             handleChange={(fileList: any) => {
-              startByUploading(fileList);
+              start(fileList);
               setFileLength(fileList.length);
               setUploaded(true);
             }}
