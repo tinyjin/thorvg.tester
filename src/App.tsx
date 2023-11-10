@@ -22,9 +22,6 @@ const successPercentage = 98;
 let player: any;
 let cv: any;
 
-
-let fileList = [];
-
 function App() {
   const initialized = useRef(false);
   const [uploaded, setUploaded] = useState(false);
@@ -310,11 +307,6 @@ function App() {
           }
 
           resolve(true);
-
-          // delay if needed
-          // setTimeout(() => {
-          //   resolve(true);
-          // }, 2000);
         };
 
         fr.readAsArrayBuffer(blob);
@@ -322,169 +314,98 @@ function App() {
     });
   }
 
-  const compareImg = (img1: any, img2: any) => {
-    // @ts-ignore
-    const cv = window.cv;
-    const mat = cv.imread(img1);
-    const mat2 = cv.imread(img2);
-
-    let srcVec = new cv.MatVector();
-    srcVec.push_back(mat);
-    let srcVec2 = new cv.MatVector();
-    srcVec2.push_back(mat2);
-    let accumulate = false;
-    let channels = [0];
-    let histSize = [256];
-    let ranges = [0, 255];
-    let hist = new cv.Mat();
-    let hist2 = new cv.Mat();
-    let mask = new cv.Mat();
-    let color = new cv.Scalar(255, 255, 255);
-    let scale = 2;
-    // You can try more different parameters
-    cv.calcHist(srcVec, channels, mask, hist, histSize, ranges, accumulate);
-    let result = cv.minMaxLoc(hist, mask);
-    let max = result.maxVal;
-
-    const Mat = cv.Mat;
-
-    // @ts-ignore
-    let dst = new Mat.zeros(
-      mat.rows, histSize[0] * scale,
-      cv.CV_8UC3,
-    );
-    
-    var hist1_values = '';
-    // draw histogram
-    for (let i = 0; i < histSize[0]; i++) {
-        hist1_values += hist.data32F[i] + ',';
-        let binVal = hist.data32F[i] * mat.rows / max;
-        let point1 = new cv.Point(i * scale, mat.rows - 1);
-        let point2 = new cv.Point((i + 1) * scale - 1, mat.rows - binVal);
-        // cv.rectangle(dst, point1, point2, color, cv.FILLED);
-    }
-    console.log(hist1_values);
-    
-    cv.imshow('thorvg-output-canvas', dst);
-
-    cv.calcHist(srcVec2, channels, mask, hist2, histSize, ranges, accumulate);
-    result = cv.minMaxLoc(hist, mask);
-    max = result.maxVal;
-
-    // @ts-ignore
-    dst = new Mat.zeros(mat.rows, histSize[0] * scale,
-                            cv.CV_8UC3);
-    var hist2_values = '';
-    // draw histogram
-    for (let i = 0; i < histSize[0]; i++) {
-        hist2_values += hist2.data32F[i] + ',';
-        const binVal = hist2.data32F[i] * mat.rows / max;
-        const point1 = new cv.Point(i * scale, mat.rows - 1);
-        const point2 = new cv.Point((i + 1) * scale - 1, mat.rows - binVal);
-        // cv.rectangle(dst, point1, point2, color, cv.FILLED);
-    }
-
-    console.log(hist2_values);
-    cv.imshow('lottie-output-canvas', dst);
-    let compare_result = cv.compareHist(hist, hist2, 0);
-
-    const compabilityOpenCV = compare_result * 100;
-    return compabilityOpenCV;
-  }
-
   return (
     <OpenCvProvider onLoad={(_cv: any) => cv = _cv}>
-    <div className="App">
-      
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        {
-          (cnt !== 0 && cnt >= fileLength - 1) ? <p>DONE</p>
-          :
-          <p>
-            {curerntFile} - {currentCompability}
-          </p>
-        }
+      <div className="App">
+        <header className="App-header">
+          <img src={logo} className="App-logo" alt="logo" />
+          {
+            (cnt !== 0 && cnt >= fileLength - 1) ? <p>DONE</p>
+            :
+            <p>
+              {curerntFile} - {currentCompability}
+            </p>
+          }
 
-        {
-          uploaded ||
-          <FileUploader 
-            handleChange={(fileList: any) => {
-              start(fileList);
-              setFileLength(fileList.length);
-              setUploaded(true);
-            }}
-            dropMessageStyle={{
-              color: 'white',
-              height: 200,
-            }}
-            children={
-              <div
-                style={{ height: 150, border: '1px solid #bdbdbd', padding: 20, display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#bdbdbd', fontSize: 24 }}
-              >
-                <p style={{ lineHeight: '32px' }}>Upload or drop <br/>LottieFiles here to test</p>
-              </div>
+          {
+            uploaded ||
+            <FileUploader 
+              handleChange={(fileList: any) => {
+                start(fileList);
+                setFileLength(fileList.length);
+                setUploaded(true);
+              }}
+              dropMessageStyle={{
+                color: 'white',
+                height: 200,
+              }}
+              children={
+                <div
+                  style={{ height: 150, border: '1px solid #bdbdbd', padding: 20, display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#bdbdbd', fontSize: 24 }}
+                >
+                  <p style={{ lineHeight: '32px' }}>Upload or drop <br/>LottieFiles here to test</p>
+                </div>
+              }
+              name="file"
+              types={['json']}
+              multiple
+            />
+          }
+
+          
+          <div style={{ marginBottom: 32, fontSize: 13, height: 200, overflowY: 'scroll' }}>
+            {
+              log.map((line, i) => <div style={{ marginBottom: 4 }}>{line}<br/></div>)
             }
-            name="file"
-            types={['json']}
-            multiple
-          />
-        }
+          </div>
+        </header>
 
         
-        <div style={{ marginBottom: 32, fontSize: 13, height: 200, overflowY: 'scroll' }}>
-          {
-            log.map((line, i) => <div style={{ marginBottom: 4 }}>{line}<br/></div>)
-          }
-        </div>
-      </header>
+        <div style={{ display: 'none', overflowX: 'scroll', width: '100%' }}>
+          <canvas id="thorvg-canvas" width={testingSize} height={testingSize} />
+          <canvas id="lottie-canvas" width={testingSize} height={testingSize} />
+          <img id="diff-img" width={testingSize} height={testingSize} />
 
-      
-      <div style={{ display: 'none', overflowX: 'scroll', width: '100%' }}>
-        <canvas id="thorvg-canvas" width={testingSize} height={testingSize} />
-        <canvas id="lottie-canvas" width={testingSize} height={testingSize} />
-        <img id="diff-img" width={testingSize} height={testingSize} />
-
-        <lottie-player
-          class="lottie-player"
-          // autoplay
-          // loop={}
-          // controls
-          width={testingSize + 'px'}
-          style={{ width: testingSize, height: testingSize }}
-          mode="normal"
-        />
-      </div>
-    </div>
-
-    {/* <div style={{ display: 'none' }}>
-      <canvas id="thorvg-output-canvas" width={512} height={512} />
-      <canvas id="lottie-output-canvas" width={512} height={512} />
-    </div> */}
-
-    <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'center', backgroundColor: '#f6f6f6' }}>
-      <div className='result-error' style={{ padding: 24 }}>
-        <div className='result-error-row-first' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'start', marginBottom: 20, fontWeight: 'bold' }}>
-          <div style={{ width: 200, textAlign: 'center' }}>Name</div>
-          <div style={{ width: 100, textAlign: 'center' }}>ThorVG</div>
-          <div style={{ width: 100, textAlign: 'center' }}>lottie-js</div>
-          <div style={{ width: 100, textAlign: 'center' }}>Diff</div>
-        </div>
-        <div className='result-error-row' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #bdbdbd' }}>
+          <lottie-player
+            class="lottie-player"
+            // autoplay
+            // loop={}
+            // controls
+            width={testingSize + 'px'}
+            style={{ width: testingSize, height: testingSize }}
+            mode="normal"
+          />
         </div>
       </div>
 
-      <div className='result' style={{ padding: 24 }}>
-        <div className='result-error-row-first' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'start', marginBottom: 20, fontWeight: 'bold' }}>
-          <div style={{ width: 200, textAlign: 'center' }}>Name</div>
-          <div style={{ width: 100, textAlign: 'center' }}>ThorVG</div>
-          <div style={{ width: 100, textAlign: 'center' }}>lottie-js</div>
-          <div style={{ width: 100, textAlign: 'center' }}>Diff</div>
+      {/* <div style={{ display: 'none' }}>
+        <canvas id="thorvg-output-canvas" width={512} height={512} />
+        <canvas id="lottie-output-canvas" width={512} height={512} />
+      </div> */}
+
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'center', backgroundColor: '#f6f6f6' }}>
+        <div className='result-error' style={{ padding: 24 }}>
+          <div className='result-error-row-first' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'start', marginBottom: 20, fontWeight: 'bold' }}>
+            <div style={{ width: 200, textAlign: 'center' }}>Name</div>
+            <div style={{ width: 100, textAlign: 'center' }}>ThorVG</div>
+            <div style={{ width: 100, textAlign: 'center' }}>lottie-js</div>
+            <div style={{ width: 100, textAlign: 'center' }}>Diff</div>
+          </div>
+          <div className='result-error-row' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #bdbdbd' }}>
+          </div>
         </div>
-        <div className='result-row' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #bdbdbd' }}>
+
+        <div className='result' style={{ padding: 24 }}>
+          <div className='result-error-row-first' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'start', marginBottom: 20, fontWeight: 'bold' }}>
+            <div style={{ width: 200, textAlign: 'center' }}>Name</div>
+            <div style={{ width: 100, textAlign: 'center' }}>ThorVG</div>
+            <div style={{ width: 100, textAlign: 'center' }}>lottie-js</div>
+            <div style={{ width: 100, textAlign: 'center' }}>Diff</div>
+          </div>
+          <div className='result-row' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #bdbdbd' }}>
+          </div>
         </div>
       </div>
-    </div>
     </OpenCvProvider>
   );
 }
