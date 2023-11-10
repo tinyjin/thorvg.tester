@@ -2,6 +2,8 @@
   "name": "my-app",
   "version": "0.1.0",
   "private": true,
+  "main": "public/Main.js",
+  "homepage": "./",
   "dependencies": {
     "@lottiefiles/lottie-player": "^2.0.2",
     "@testing-library/jest-dom": "^5.17.0",
@@ -11,6 +13,8 @@
     "@types/node": "^16.18.60",
     "@types/react": "^18.2.36",
     "@types/react-dom": "^18.2.14",
+    "electron": "^27.0.4",
+    "electron-builder": "^24.6.4",
     "opencv-react": "^0.0.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -26,9 +30,12 @@
   },
   "scripts": {
     "start": "DISABLE_ESLINT_PLUGIN=true react-scripts start",
-    "build": "react-scripts build",
+    "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "react-start": "BROWSER=none npm start",
+    "electron-start": "ELECTRON_START_URL=http://localhost:3000 electron .",
+    "electron-pack": "npm build && electron-builder build -c.extraMetadata.main=build/Main.js"
   },
   "eslintConfig": {
     "extends": [
