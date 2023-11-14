@@ -11,6 +11,7 @@ import { testingSize, size, successPercentage } from "./utils/constant";
 import { drawSvgIntoCanvas } from "./utils/drawer";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { BlobReader, ZipReader, TextWriter } from "@zip.js/zip.js";
 
 declare global {
   interface Window { 
@@ -348,7 +349,30 @@ function App() {
           {
             uploaded ||
             <FileUploader 
-              handleChange={(fileList: any) => {
+              handleChange={async (_fileList: any) => {
+                let fileList = [];
+                if (_fileList[0].name.endsWith('.zip')) {
+                  const fileBlob = _fileList[0];
+                  const zipReader = new ZipReader(new BlobReader(fileBlob));
+                  const entries = await zipReader.getEntries();
+
+                  for (const entry of entries) {
+                    if (entry.filename.startsWith('__MACOSX')) {
+                      continue;
+                    }
+                    
+                    const helloWorldWriter = new TextWriter();
+                    // @ts-ignore
+                    const file = await entry.getData(helloWorldWriter);
+                    const blob = new Blob([file], { type: 'application/json' });
+                    fileList.push(new File([blob], entry.filename));
+                  }
+
+                  await zipReader.close();
+                } else {
+                  fileList = _fileList;
+                }
+
                 start(fileList);
                 setFileLength(fileList.length);
                 setUploaded(true);
@@ -365,7 +389,7 @@ function App() {
                 </div>
               }
               name="file"
-              types={['json']}
+              types={['json', 'zip']}
               multiple
             />
           }

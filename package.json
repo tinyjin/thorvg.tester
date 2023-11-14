@@ -13,6 +13,7 @@
     "@types/node": "^16.18.60",
     "@types/react": "^18.2.36",
     "@types/react-dom": "^18.2.14",
+    "@zip.js/zip.js": "^2.7.30",
     "electron": "^27.0.4",
     "electron-builder": "^24.6.4",
     "html2canvas": "^1.4.1",
