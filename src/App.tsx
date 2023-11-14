@@ -9,6 +9,8 @@ import { FileUploader } from "react-drag-drop-files";
 import { diffWithResembleJS } from './utils/diff';
 import { testingSize, size, successPercentage } from "./utils/constant";
 import { drawSvgIntoCanvas } from "./utils/drawer";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 declare global {
   interface Window { 
@@ -27,7 +29,12 @@ function App() {
   
   const [curerntFile, setCurrentFile] = useState('');
   const [currentCompability, setCurrentCompability] = useState('');
+
+  const [passedList, setPassedList] = useState<string[]>([]);
+  const [failedList, setFailedList] = useState<string[]>([]);
+
   let [cnt, setCnt] = useState(0);
+  let [failedCnt, setFailedCnt] = useState(0);
   let [log, setLog] = useState<string[]>([]);
 
   useEffect(() => {
@@ -75,8 +82,12 @@ function App() {
       // save result 
       try {
         if (isCompability) {
+          passedList.push(file.name);
           await saveResult(logText);
         } else {
+          failedList.push(file.name);
+          failedCnt += 1;
+          setFailedCnt(failedCnt);
           await saveError(logText);
         }
       } catch (err) {
@@ -87,7 +98,45 @@ function App() {
       cnt += 1;
       setCnt(cnt);
     }
+
+    exportToPDF();
+    createClaasifyScript();
   };
+
+  const exportToPDF = async () => {
+    const doc = new jsPDF();
+    const resultBoard = document.querySelector('.result-board');
+
+    const compability = Math.ceil((cnt - failedCnt) / cnt * 100);
+    doc.text(`ThorVG Testing Results (Passed: ${cnt - failedCnt} / ${cnt})`, 20, 20);
+    doc.text(`Compability : ${compability}%`, 20, 30);
+
+    await html2canvas(resultBoard as any).then(canvas => {
+      // Few necessary setting options
+      const imgWidth = 208; // your own stuff to calc the format you want
+      const imgHeight = canvas.height * imgWidth / canvas.width; // your own stuff to calc the format you want
+      const contentDataURL = canvas.toDataURL('image/png');
+      doc.addImage(contentDataURL, 'PNG', 0, 40, imgWidth, imgHeight);
+      doc.save('test.pdf'); // save / download
+      doc.output('dataurlnewwindow'); // just open it
+    });
+  }
+
+  const createClaasifyScript = async () => {
+    let script = `mkdir -p ./passed ./failed;`;
+
+    if (passedList.length > 0) {
+      script += ` mv ${passedList.join(' ')} ./passed;`;
+    }
+
+    if (failedList.length > 0) {
+      script += ` mv ${failedList.join(' ')} ./failed;`;
+    }
+
+    await window.navigator.clipboard.writeText(script);
+    alert("Copied script to clipboard! Put this command in the folder where the test files are located to classify them.");
+  };
+
 
   const run = async (file: File): Promise<number> => {
     return new Promise((resolve, reject) => { // !
@@ -352,7 +401,7 @@ function App() {
         <canvas id="lottie-output-canvas" width={512} height={512} />
       </div> */}
 
-      <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'center', backgroundColor: '#f6f6f6' }}>
+      <div className="result-board" style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'center', backgroundColor: '#f6f6f6' }}>
         <div className='result-error' style={{ padding: 24 }}>
           <div className='result-error-row-first' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'start', marginBottom: 20, fontWeight: 'bold' }}>
             <div style={{ width: 200, textAlign: 'center' }}>Name</div>
