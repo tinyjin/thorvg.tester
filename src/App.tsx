@@ -360,7 +360,7 @@ function App() {
                     if (entry.filename.startsWith('__MACOSX')) {
                       continue;
                     }
-                    
+
                     const helloWorldWriter = new TextWriter();
                     // @ts-ignore
                     const file = await entry.getData(helloWorldWriter);
@@ -385,7 +385,7 @@ function App() {
                 <div
                   style={{ height: 150, border: '1px solid #bdbdbd', padding: 20, display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#bdbdbd', fontSize: 24 }}
                 >
-                  <p style={{ lineHeight: '32px' }}>Upload or drop <br/>LottieFiles here to test</p>
+                  <p style={{ lineHeight: '32px' }}>Upload or drop <br/>LottieFiles or Zip here to test</p>
                 </div>
               }
               name="file"
