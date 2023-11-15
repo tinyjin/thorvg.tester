@@ -22,6 +22,7 @@ declare global {
 
 let player: any;
 let cv: any;
+let isDebug = false;
 
 function App() {
   const initialized = useRef(false);
@@ -42,6 +43,9 @@ function App() {
     if (initialized.current) {
       return;
     }
+
+    // check debug mode from query param
+    isDebug = window.location.href.includes('debug');
 
     initialized.current = true;
 
@@ -118,6 +122,17 @@ function App() {
       const imgHeight = canvas.height * imgWidth / canvas.width; // your own stuff to calc the format you want
       const contentDataURL = canvas.toDataURL('image/png');
       doc.addImage(contentDataURL, 'PNG', 0, 40, imgWidth, imgHeight);
+
+      if (isDebug) {
+        const uriString = doc.output('datauristring');
+        const debugResult = document.querySelector('.debug-result');
+        const text = document.createElement('span');;
+        text.textContent = uriString;
+        text.classList.add('debug-result-pdf');
+        debugResult?.appendChild(text);
+        return;
+      }
+
       doc.save('test.pdf'); // save / download
       doc.output('dataurlnewwindow'); // just open it
     });
@@ -132,6 +147,15 @@ function App() {
 
     if (failedList.length > 0) {
       script += ` mv ${failedList.join(' ')} ./failed;`;
+    }
+
+    if (isDebug) {
+      const debugResult = document.querySelector('.debug-result');
+      const text = document.createElement('span');;
+      text.textContent = script;
+      text.classList.add('debug-result-script');
+      debugResult?.appendChild(text);
+      return;
     }
 
     await window.navigator.clipboard.writeText(script);
@@ -349,6 +373,7 @@ function App() {
           {
             uploaded ||
             <FileUploader 
+              className="file-uploader"
               handleChange={async (_fileList: any) => {
                 let fileList = [];
                 if (_fileList[0].name.endsWith('.zip')) {
@@ -446,6 +471,10 @@ function App() {
           </div>
           <div className='result-row' style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #bdbdbd' }}>
           </div>
+        </div>
+
+        <div className="debug-result" hidden>
+
         </div>
       </div>
     </OpenCvProvider>
