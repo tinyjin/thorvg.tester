@@ -1,12 +1,16 @@
 import puppeteer from 'puppeteer';
 import fs from "fs";
 import path from "path";
-import { exec } from 'child_process';
+// import { exec } from 'child_process';
 
 (async () => {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   // const command = process.argv[0];
+
+  // TODO: Support options
+  // * -D : debug
+  // * -C : classify
 
   // Navigate the page to a URL
   await page.goto('https://thorvg-tester.vercel.app?debug=true');
@@ -19,7 +23,7 @@ import { exec } from 'child_process';
   const fileUploader = await page.$("input[type=file]");
   fileUploader?.uploadFile(...fileList);
 
-  await page.waitForSelector('.debug-result-script');
+  await page.waitForSelector('.debug-result-script', { timeout: 1000000 });
   const script = await page.$eval('.debug-result-script', el => el.textContent);
 
   // exec(`cd ${targetDir}; ${script}`);
@@ -29,7 +33,7 @@ import { exec } from 'child_process';
   var buf = Buffer.from((pdfUriString as string).replace('data:application/pdf;filename=generated.pdf;base64,', ''), 'base64');
   fs.writeFileSync('result.pdf', buf);
 
-  // TODO: log progress
+  // TODO: log progress, case by case, total progress
 
   browser.close();
 })();
