@@ -19,6 +19,9 @@ Click to use [ThorVG Tester](https://thorvg-tester.vercel.app)
 ```sh
 npm install -g https://github.com/tinyjin/thorvg.tester
 tvg-cli /path/to/target-dir
+
+# Optional if you want check result via PDF
+open result.pdf
 ```
 
 ## Review with PDF
