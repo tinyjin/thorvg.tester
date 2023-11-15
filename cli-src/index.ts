@@ -4,7 +4,7 @@ import path from "path";
 import { exec } from 'child_process';
 
 (async () => {
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   // const command = process.argv[0];
 
@@ -14,7 +14,7 @@ import { exec } from 'child_process';
   await page.waitForSelector('input');
 
   const targetDir = process.argv[2];
-  const fileList = fs.readdirSync(targetDir).filter(v => v.endsWith('.json')).map((file: string) => path.join(targetDir, file));
+  const fileList = fs.readdirSync(path.resolve(process.cwd(), targetDir)).filter(v => v.endsWith('.json')).map((file: string) => path.join(targetDir, file));
   
   const fileUploader = await page.$("input[type=file]");
   fileUploader?.uploadFile(...fileList);
