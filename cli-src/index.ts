@@ -4,15 +4,16 @@ import path from "path";
 import { exec } from 'child_process';
 
 (async () => {
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
+  // const command = process.argv[0];
 
   // Navigate the page to a URL
   await page.goto('https://thorvg-tester.vercel.app?debug=true');
   await page.setViewport({ width: 1080, height: 1024 });
   await page.waitForSelector('input');
 
-  const targetDir = process.argv[process.argv[0].endsWith('ts-node') ? 2 : 1];
+  const targetDir = process.argv[2];
   const fileList = fs.readdirSync(targetDir).filter(v => v.endsWith('.json')).map((file: string) => path.join(targetDir, file));
   
   const fileUploader = await page.$("input[type=file]");
