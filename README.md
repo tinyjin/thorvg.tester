@@ -1,10 +1,6 @@
-# ThorVG Tester
+# ThorVG Test Automation
 
-```
-⚠️ [WIP] This currently supports comparing ThorVG to only LottieFiles
-```
-
-ThorVG Tester is unofficial graphic renderer testing tool for ThorVG Engine. It works on web browser and detects rendering error by comparing canvas outputs, automatically.
+ThorVG Test Automation is rendering test tool for ThorVG Engine. It works as both GUI and CLI, detects rendering error by comparing canvas bitmap, automatically.
 
 https://github.com/tinyjin/thorvg.tester/assets/11167117/b4df338a-d4e1-4671-b1ca-c4ccc1fdf3ec
 
@@ -17,7 +13,7 @@ Click to use [ThorVG Tester](https://thorvg-tester.vercel.app)
 
 ## CLI
 ```sh
-npm install -g https://github.com/tinyjin/thorvg.tester
+npm install -g thorvg/thorvg.test-automation
 tvg-cli /path/to/target-dir
 
 # Optional if you want check result via PDF
