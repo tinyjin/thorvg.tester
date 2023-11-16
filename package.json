@@ -29,7 +29,7 @@
     "web-vitals": "^2.1.4"
   },
   "bin": {
-    "tvg-cli": "cli-src/starter.js"
+    "tvg-cli": "./cli-src/starter.js"
   },
   "browser": {
     "fs": false,
