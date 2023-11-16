@@ -4,7 +4,10 @@ import path from "path";
 // import { exec } from 'child_process';
 
 (async () => {
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({ 
+    headless: true,
+    protocolTimeout: 3000000,
+  });
   const page = await browser.newPage();
   // const command = process.argv[0];
 
@@ -23,7 +26,7 @@ import path from "path";
   const fileUploader = await page.$("input[type=file]");
   fileUploader?.uploadFile(...fileList);
 
-  await page.waitForSelector('.debug-result-script', { timeout: 1000000 });
+  await page.waitForSelector('.debug-result-script', { timeout: 3000 * fileList.length });
   const script = await page.$eval('.debug-result-script', el => el.textContent);
 
   // exec(`cd ${targetDir}; ${script}`);
