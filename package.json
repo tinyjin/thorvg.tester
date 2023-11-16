@@ -1,7 +1,8 @@
 {
-  "name": "thorvg.tester",
+  "name": "tvg-cli",
   "version": "0.1.0",
   "private": true,
+  "preferGlobal": true,
   "main": "public/Main.js",
   "homepage": "./",
   "dependencies": {
