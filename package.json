@@ -10,7 +10,7 @@
     "puppeteer": "^21.5.1"
   },
   "bin": {
-    "tvg-cli": "./cli-src/starter.js"
+    "tvg-cli": "./bin/tvg-cli"
   },
   "browser": {
     "fs": false,

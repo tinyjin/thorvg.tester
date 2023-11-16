@@ -1,0 +1,7 @@
+#! /usr/bin/env node
+'use strict';
+
+process.title = 'tvg-cli';
+
+require('ts-node').register();
+require('../cli-src/index.js');
