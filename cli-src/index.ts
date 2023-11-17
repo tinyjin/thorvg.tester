@@ -1,6 +1,11 @@
-import puppeteer from 'puppeteer';
-import fs from "fs";
-import path from "path";
+#! /usr/bin/env ts-node
+'use strict';
+
+
+// @ts-ignore
+import * as puppeteer from 'puppeteer';
+import * as fs from "fs";
+import * as path from "path";
 // import { exec } from 'child_process';
 
 (async () => {
