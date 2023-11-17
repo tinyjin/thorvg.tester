@@ -10,9 +10,7 @@
     "ts-node": "^10.9.1",
     "puppeteer": "^21.5.1"
   },
-  "bin": {
-    "tvg-cli": "./cli-src/index.ts"
-  },
+  "bin": "./cli-src/index.ts",
   "browser": {
     "fs": false,
     "path": false,
