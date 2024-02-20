@@ -1,5 +1,16 @@
 # ThorVG Test Automation
 
+# Deprecated
+> [!NOTE]
+> This repository is deprecated and no longer actively maintained.
+
+This project has been moved to the ThorVG project. You can find the official [here](https://github.com/thorvg/thorvg.test-automation).
+
+
+---
+
+## Previous README Content
+
 ThorVG Test Automation is rendering test tool for ThorVG Engine. It works as both GUI and CLI, detects rendering error by comparing canvas bitmap, automatically.
 
 https://github.com/tinyjin/thorvg.tester/assets/11167117/b4df338a-d4e1-4671-b1ca-c4ccc1fdf3ec
